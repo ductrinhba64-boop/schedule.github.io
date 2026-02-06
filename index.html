@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>📚 Lịch Học Của Tôi</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <span class="emoji">📚</span>
+    <h1 id="appTitle">Lịch Học Của Tôi</h1>
+    <span class="current-schedule-badge" id="currentScheduleBadge"></span>
+  </div>
+  <div class="header-right">
+    <button class="toggle-dark" id="toggleDark" onclick="toggleDarkMode()"></button>
+    <button class="btn btn-secondary" id="exitTempBtn" onclick="exitTempScheduleMode()" style="display: none;">
+      ← Thoát TKB Tạm thời
+    </button>
+    <button class="btn btn-secondary" onclick="openScheduleSettingsModal()" id="settingsBtn">⚙️ Cài đặt TKB</button>
+    <button class="btn btn-primary" onclick="openAddModal()" id="addBtn">+ Thêm Môn</button>
+  </div>
+</div>
+<div class="week-bar">
+  <span class="week-label" id="weekLabel">Tuần học:</span>
+  <button class="week-nav" onclick="changeWeek(-1)" id="prevBtn">← Trước</button>
+  <div class="week-display" id="weekDisplay"></div>
+  <button class="week-nav" onclick="changeWeek(1)" id="nextBtn">Sau →</button>
+</div>
+<div class="schedule-info" id="scheduleInfo"></div>
+<div class="grid-container" id="gridContainer">
+  <div class="schedule-grid" id="scheduleGrid"></div>
+</div>
+
+<!-- Modal for Add/Edit Subject -->
+<div class="overlay" id="overlay" onclick="closeModal()"></div>
+<div class="modal" id="modal" onclick="event.stopPropagation()">
+  <div class="modal-header" id="modalTitle">
+    <h2>
+      <span>📝 Thêm Môn Học</span>
+      <span class="mode-indicator">Thêm mới</span>
+    </h2>
+    <button class="btn-close" onclick="closeModal()">×</button>
+  </div>
+  <div class="form-group">
+    <label class="form-label" id="labelSubjectName">Tên Môn Học</label>
+    <input type="text" class="form-input" id="inputName" placeholder="Ví dụ: Toán Cao Cấp" />
+  </div>
+  <div class="form-group">
+    <label class="form-label" id="labelRoom">Phòng Học (tùy chọn)</label>
+    <input type="text" class="form-input" id="inputRoom" placeholder="Ví dụ: A101" />
+  </div>
+  <div class="form-group">
+    <label class="form-label" id="labelTeacher">Giảng Viên (tùy chọn)</label>
+    <input type="text" class="form-input" id="inputTeacher" placeholder="Ví dụ: Nguyễn Văn A" />
+  </div>
+  <div id="daySlotSelectors">
+    <div class="form-group">
+      <label class="form-label" id="labelSelectDay">Chọn Thứ</label>
+      <div class="day-selector" id="daySelector"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label" id="labelSelectSlot">Chọn Tiết</label>
+      <div class="slot-selector" id="slotSelector"></div>
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="form-label" id="labelSelectIcon">Chọn Icon</label>
+    <div class="icon-selector-header">
+      <div class="icon-tabs">
+        <div class="icon-tab active" id="emojiTab" onclick="switchIconTab('emoji')">Emoji</div>
+        <div class="icon-tab" id="customTab" onclick="switchIconTab('custom')">Tùy chỉnh</div>
+      </div>
+    </div>
+    <div id="emojiIconGrid" class="icon-grid"></div>
+    <div id="customIconArea" style="display:none;">
+      <input type="file" id="iconUpload" accept="image/*" style="display:none" onchange="uploadCustomIcon(event)" />
+      <div class="upload-area" id="uploadArea" onclick="document.getElementById('iconUpload').click()">
+        <div class="upload-area-content">
+          <div class="upload-icon">📤</div>
+          <div class="upload-text">Tải lên icon tùy chỉnh</div>
+          <div class="upload-hint">Kéo thả ảnh vào đây hoặc nhấp để chọn</div>
+        </div>
+      </div>
+      <div class="icon-grid" id="customIconGrid" style="margin-top: 12px;"></div>
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="form-label" id="labelChooseColor">🎨 Chọn Màu</label>
+    <div class="color-picker-container">
+      <div class="color-wheel-wrapper">
+        <div class="saturation-brightness-square" id="sbSquare">
+          <div class="sb-cursor" id="sbCursor"></div>
+        </div>
+      </div>
+      <div class="color-sliders">
+        <div class="slider-group">
+          <label id="labelBrightness">☀️ Độ sáng</label>
+          <input type="range" id="brightnessSlider" min="0" max="100" value="0" />
+        </div>
+        <div class="slider-group">
+          <label id="labelDarkness">🌙 Độ đậm</label>
+          <input type="range" id="darknessSlider" min="0" max="100" value="20" />
+        </div>
+      </div>
+      <div class="color-preview-wrapper">
+        <div class="color-preview-box" id="colorPreview"></div>
+        <div class="rgb-display" id="rgbDisplay">#5252CC • RGB(82, 82, 204)</div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-delete" id="btnDelete" onclick="deleteCurrentSubject()">🗑️ Xóa</button>
+    <button class="btn btn-ghost" id="btnCancel" onclick="closeModal()">Hủy</button>
+    <button class="btn btn-primary" id="btnSave" onclick="saveSubject()">💾 Lưu</button>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal" id="settingsModal" onclick="event.stopPropagation()">
+  <div class="modal-header">
+    <h2 id="settingsTitle">⚙️ Cài Đặt Thời Khóa Biểu</h2>
+    <button class="btn-close" onclick="closeSettingsModal()">×</button>
+  </div>
+  <div class="form-group">
+    <label class="form-label">🌐 Ngôn ngữ / Language</label>
+    <select class="form-input" id="languageSelect" onchange="changeLanguage(this.value)">
+      <option value="vi">Tiếng Việt</option>
+      <option value="en">English</option>
+    </select>
+  </div>
+  
+  <div class="form-group">
+    <label class="form-label" id="tempScheduleLabel">⏰ Thời khóa biểu tạm thời</label>
+    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">
+      Tạo lịch riêng cho một khoảng thời gian nhất định (ví dụ: thi giữa kỳ, tuần lễ). Sau khi kết thúc, lịch sẽ tự động quay về lịch chính.
+    </p>
+    <div class="date-range-group">
+      <div class="date-input-wrapper">
+        <label id="tempFromLabel">Từ ngày</label>
+        <input type="date" class="form-input" id="tempStartDate" />
+      </div>
+      <div class="date-input-wrapper">
+        <label id="tempToLabel">Đến ngày</label>
+        <input type="date" class="form-input" id="tempEndDate" />
+      </div>
+    </div>
+  </div>
+  
+  <div class="form-group">
+    <label class="form-label">📚 Quản lý Thời khóa biểu</label>
+    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">
+      Tạo và quản lý nhiều thời khóa biểu khác nhau (tối đa 5). Mỗi TKB hoạt động độc lập.
+    </p>
+    <div id="scheduleListContainer" style="margin-bottom: 12px;"></div>
+    <button class="btn btn-ghost" onclick="addNewSchedule()" id="addScheduleBtn" style="width: 100%;">
+      ➕ Thêm Thời khóa biểu mới
+    </button>
+  </div>
+  
+  <div class="form-group">
+    <label class="form-label" style="color: #EF4444;" id="deleteDataLabel">🗑️ Xóa dữ liệu</label>
+    <button class="btn btn-danger" onclick="resetAllSchedules()" style="width: 100%;" id="resetAllBtn">
+      ⚠️ Xóa tất cả thời khóa biểu
+    </button>
+  </div>
+  
+  <div class="modal-footer">
+    <button class="btn btn-ghost" onclick="closeSettingsModal()" id="cancelBtn">Hủy</button>
+    <button class="btn btn-primary" onclick="saveScheduleSettings()" id="saveSettingsBtn">💾 Lưu cài đặt</button>
+  </div>
+</div>
+
+<!-- Confirm Dialog -->
+<div class="overlay" id="confirmOverlay" style="z-index: 1001;" onclick="closeConfirmDialog()"></div>
+<div class="confirm-dialog" id="confirmDialog">
+  <div class="confirm-dialog-title" id="confirmTitle"></div>
+  <div class="confirm-dialog-message" id="confirmMessage"></div>
+  <div class="confirm-dialog-buttons">
+    <button class="btn btn-ghost" id="confirmCancelBtn" onclick="closeConfirmDialog()">Hủy</button>
+    <button class="btn btn-danger" id="confirmOkBtn">Xác nhận</button>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
